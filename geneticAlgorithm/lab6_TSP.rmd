@@ -1,0 +1,132 @@
+---
+title: 'GA Permutation Problem: TSP'
+output:
+  pdf_document: default
+  html_notebook: default
+---
+# Introduction
+
+This short example of the travelling salesman (person) problem (TSP) is based on the paper:
+
+*L. Scrucca, "GA: A Package for Genetic Algorithms in R", Journal of Statistical Software, Vol 53(4), 2013.*
+
+## TSP and the GA package
+
+The traveling salesperson problem (TSP) is one of the most widely discussed problems in combinatorial optimization. In its simplest form, consider a set of n cities with known symmetric intra-distances, the TSP involves finding an optimal route for visiting all the cities and return to the starting point such that the distance traveled is minimized. The search space becomes rapidly very large as the number of cities increase. Several different representations and genetic operators for solving the TSP with GAs are available (for a review see Larranaga, Kuijpers, Murga, Inza, and Dizdarevic 1999). The most natural representation is denominated path representation. In this representation, the n cities are put in order according to a list of n elements, so that if the city i is the j-th element of the list, city i is the j-th city to be visited. For example, given 5 cities the list (B;D;A;C;E) corresponds to the tour that visits the first city B, then D, etc., ending with city E.  Normally we assume this then returns to the starting city B.
+
+We will use a relatively simple problem with 21 cities in Europe.  This is accessed from the R dataset as *eurodist*.
+
+```{r,warning=FALSE,message=FALSE}
+library(GA)
+library(stats)  # For distance
+data("eurodist",package="datasets")
+D <- as.matrix(eurodist)
+head(D)
+```
+
+The matrix D represents the distance between all cities.  This can directly be used to calculate the total distance travelled for a specific route connecting all cities.  Given a specific tour, we need a function to calculate the distance.  This can be used to calculate the fitness for a tour, noting that GA wants to maximise.
+
+```{r}
+tourLength <- function(tour, distMatrix) 
+{
+    tour <- c(tour, tour[1])
+    route <- embed(tour, 2)[,2:1]
+    sum(distMatrix[route])
+}
+
+tspFitness <- function(tour, ...) 1/tourLength(tour, ...)
+
+```
+
+We are now ready to use the GA to optimise the tour.  Note that this is a permutation problem and so the appropriate type and parameters need to be set, as follows.
+
+```{r}
+ga.tour <- ga(type = "permutation", 
+              fitness = tspFitness, 
+              distMatrix = as.matrix(D),  # argument to tspFitness
+              lower = 1, 
+              upper = nrow(D), 
+              popSize = 50, 
+              maxiter = 2000,
+              run = 500, # Number of generations
+              pmutation = 0.2,
+              monitor=FALSE)
+ga.tour@solution
+```
+
+We can plot this out to see if it looks sensible.  This takes a little work...
+
+```{r}
+mds <- cmdscale(eurodist)
+x <- mds[, 1]
+y <- -mds[, 2]
+plot(x, y, type = "n", asp = 1, xlab = "", ylab = "",xlim=c(-2500,2500))
+abline(h = pretty(range(x), 10), v = pretty(range(y), 10),col = "light gray")
+tour <- ga.tour@solution[1, ]
+tour <- c(tour, tour[1])
+n <- length(tour)
+arrows(x[tour[-n]], y[tour[-n]], x[tour[-1]], y[tour[-1]],
+       length = 0.15, angle = 25, col = "steelblue", lwd = 2)
+text(x, y, labels(eurodist), cex=0.8)
+```
+
+**Exercise:** *Below is some code to create a set of cities that lie on a circle.  Obviously the best solution should just create a path around the circle.  The code creates the (x,y) for each city. Plot the result of calling cities_circle() to check you understand what is created.  Try using GA to find the optimal (shortest) path.  HINT:  You will need to create the distance matrix using dist, and the plotting will be just the points on the circle (no labels).  Set diag and upper to TRUE in the distance function so it is the same as the original distance matrix example (D in the above eurodist example).  Have a look at D to make sure you understand what this represents. *
+
+```{r}
+cities_circle <- function(number_cities = 10)
+{
+	cities <- NULL
+	angles <- seq(from=0,to=2*pi,length.out=(number_cities+1))
+	
+	# Note we remove the first angle since it is repeated at 2pi, and we just want
+	# each city once.  This could be done in one line, but I thought this was less
+	# confusing...
+	
+	for (a in angles[-1])
+	{
+		cities <- rbind(cities,cbind(cos(a),sin(a)))
+	}
+	return(cities)
+}
+```
+
+Here is the solution:
+
+```{r}
+# Make cities
+
+num.cities <- 50
+cities <- cities_circle(num.cities)
+city.dist <- as.matrix(dist(cities,diag=TRUE,upper=TRUE))
+
+ga.tour <- ga(type = "permutation", 
+              fitness = tspFitness, 
+              distMatrix = city.dist,  # argument to tspFitness
+              lower = 1, 
+              upper = nrow(city.dist), 
+              popSize = 50, 
+              maxiter = 1000,
+              run = 500, # Number of generations
+              pmutation = 0.2,
+              monitor=FALSE)
+ga.tour@solution
+
+# and plot solution
+
+plot(cities,pch=16)
+
+x <- cities[, 1]
+y <- cities[, 2]
+
+tour <- ga.tour@solution[1, ]
+tour <- c(tour, tour[1])
+n <- length(tour)
+arrows(x[tour[-n]], y[tour[-n]], x[tour[-1]], y[tour[-1]],
+       length = 0.15, angle = 25, col = "steelblue", lwd = 2)
+
+
+
+```
+
+
+
