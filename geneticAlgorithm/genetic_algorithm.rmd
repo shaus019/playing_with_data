@@ -1,0 +1,142 @@
+---
+title: "Simple Genetic Algorithm"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+# Introduction
+This lab introduces a simple genetic algorithm (GA).  The example is based on the approach presented at http://www.r-bloggers.com/genetic-algorithms-a-simple-r-example/.
+
+The [R] package used for this example is *GA* - a good implementation of a genetic algorithm that allows binary, numeric value or permutation values to be searched.  Controls over the basic parameters such as population size, number of generations, mutation rate, etc. are allowed. 
+
+```{r,warning=FALSE}
+library(GA)
+```
+
+## Bag Packing Problem
+
+The simple problem presented here is to determine the optimal contents of a bag.  The possible items are given in a table with a weight and a survival value.  We want to find out what is the best combination of items to maximise our survival given a certain weight limit.  Let's first define the possible items to be selected as *items*, and show one possible example solution.  We have also defined the *weightlimit*.
+
+```{r}
+items <- data.frame(item = 
+    c("pocketknife", "beans", "potatoes", "undies", "sleeping bag", "rope", "compass",
+	"multi-tool", "firstaid", "flashlight", "matches", "blanket", "spray","waterbottle"), 
+	survivalpoints = c(7,15,15,2,30,10,20,10,15,7,7,12,2,12), 
+	weight = c(1,5,10,1,7,5,1,3,6,3,1,9,1,5)
+	)
+		
+weightlimit <- 20
+
+exampleselection <- c(1,0,0,1,1,0,0,0,0,0,1,1,0,0)
+items[exampleselection==1,]
+
+```
+
+Every *GA* requires an evaluation function (*fitness function*) that, given a single individual, returns a measure of their quality.  Since the *GA* package assumes you are trying to maximise fitness, we return the sum of *survivalpoints*.  In addition, since this is a single objective approach, if the individual solution is too heavy we just need to return a poor fitness - in this case we could just return a value of zero.
+
+```{r}
+fitness.fn <- function(x) 
+{
+    current_solution_survivalpoints <- x %*% items$survivalpoints
+    current_solution_weight <- x %*% items$weight
+	
+    if (current_solution_weight > weightlimit) # Constraint
+        return(0) # Worst fitness
+		else return(current_solution_survivalpoints)  # Smaller fitness is better
+}
+```
+
+Now all we need to do is call the *GA* and define the population and running parameters.  Note that we need to pass it the *fitness* function. Initially we will just use the default parameters apart from number of generations (maxiter).  Setting monitor to FALSE means there is no verbose output as the model executes.  
+
+```{r}
+ga.result <- ga(type="binary",
+                fitness=fitness.fn,
+                nBits=nrow(items),
+                maxiter=50,
+                monitor=FALSE)
+```
+
+The resulting model has a number of [R] slots - the final population, the best solution, etc.  So, for example, the previous run best solution looks like:
+
+```{r,fig.width=5,fig.height=5}
+#
+# the best solution
+ga.result@solution
+#
+# and determine what this looks like:
+#
+items[which(ga.result@solution==1),]
+```
+
+We can also plot the evolution of the population fitness over the generations:
+
+```{r}
+plot(ga.result)
+```
+
+**Exercise:** *Examine the help for GA (help(ga)), and rerun the model with elitism set to zero.  What happens to the population plot of the best individual?*
+
+
+
+**Exercise:** *Set the probability of mutation to zero (0) and examine the resulting population plot.  What is happening here?  Try running for 100 iterations.  What does this tell you about the role of mutation for fixed-length representations?*
+
+
+```{r}
+fitness.fn <- function(x) 
+{
+    current_solution_survivalpoints <- x %*% items$survivalpoints
+    current_solution_weight <- x %*% items$weight
+	
+    if (current_solution_weight > weightlimit) # Constraint
+        return(0) # Worst fitness
+		else return(current_solution_survivalpoints)  # Smaller fitness is better
+}
+ga.result <- ga(type="binary",
+                fitness=fitness.fn,
+                nBits=nrow(items),
+                maxiter=100,
+                monitor=FALSE,
+                elitism=0,
+                pcrossover=0.9,
+                pmutation=0.0)
+
+plot(ga.result,legend=FALSE)
+
+count <- apply(ga.result@population,2,sum)
+
+
+```
+
+
+## Real Parameter Optimisation
+
+We can use the same package to perform optimisation in many dimensions for real-valued vectors.  As a simple example, consider the following simple curve:
+
+```{r}
+f <- function(x)  (x^2+x)*cos(x)
+lbound <- -10; ubound <- 10
+curve(f,from=lbound,to=ubound,n=1000)
+
+```
+
+Assume we want to find the maximum value of this function (obviously easy because it is only one-dimensional).  
+
+```{r}
+ga.one <- ga(type = "real-valued", 
+             fitness = f, 
+             lower = c(th = lbound), 
+             upper = ubound,
+             monitor=FALSE)
+summary(ga.one)
+```
+
+And of course we can show where the *best* solution has been found:
+
+```{r}
+curve(f,from=lbound,to=ubound,n=1000)
+abline(v=ga.one@solution,lwd=2,col=2)
+```
+**Exercise** *Type help(GA) into the console window, and then click on vignette that accompanies this package.  Explore a few of the examples and try some out.  You should be able to paste the code into the console or the notebook.*
+
+
