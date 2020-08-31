@@ -1,0 +1,1 @@
+In this project, we will work on multi-objective optimization. We will treat the problem which we worked on in the Genetic Algorithm as a multi-objective optimization by looking at two representations a binary string and using a vector of real values.
