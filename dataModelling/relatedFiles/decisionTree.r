@@ -12,24 +12,37 @@ head(data)
 dataClean <- data[,-c(1,2,14,15,16)] # remove instant, dteday, casual, registered, bikes from the data.
 head(dataClean)
 
-dt.control <- rpart.control(maxdepth=30) # 0 is root node
-credit.model <- rpart(dataClean$clean_bikes ~ ., data = dataClean, control = dt.control)
+r2 <- matrix(ncol = 20, nrow = 50)
+for (x in 1:20) {
+  for (v in 1:50) {
+    dataSplit <- sample.int(n=nrow(dataClean), size = floor(.70*nrow(dataClean)), replace = FALSE) # split the data
+    trainData <- dataClean[dataSplit,] # get the training data
+    testData <- dataClean[-dataSplit,] # get the testing data
+    rp <- rpart(clean_bikes ~ ., data = trainData,
+                control=rpart.control(maxdepth=x,
+                                      minsplit=2,
+                                      minbucket=2,
+                                      cp=0))
+    yhat <- predict(rp,
+                    newdata=testData,
+                    type="vector")
+    y <- testData$clean_bikes # test data
+    yhat <- predict(rp, testData) # prediction using all test data
+    rsqr <- 1 - sum((y - yhat)^2) / sum((y - mean(y))^2) # R-squared measure
+    r2[v,x] <- rsqr
+    
+    
+  }
+  
+}
 
-plot(credit.model, branch=0, compress=TRUE, main="Bikes Number  Decision Tree")
-text(credit.model, pretty=0, use.n=TRUE, fancy=FALSE, all=FALSE, cex=0.75, fwidth=0.25, xpd=TRUE)
 
-# Simple visualisation of tree:
-#
-# prp(credit.model)
-#
-summary(credit.model)
+print(r2)
+r3<- sample(0,20,replace= TRUE)
+for (r in 1:20) {
+ r3[r] <-  mean(r2[,r])
+  
+}
 
-#########################################################
-# How many go to the right of the top node
-##########################################################
-right.tree <- which((credit$checking_status=='>=200') | 
-                      (credit$checking_status == 'no checking'))
-#
-# How many to the right are good?
-summary(credit[right.tree,"class"])
-#
+print(r3)
+plot(1:20,r3, type = 'l',xlab = "Tree Depth", ylab = "R^2", col = "orange")
