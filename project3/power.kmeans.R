@@ -31,11 +31,14 @@ build.table <- function(p)
 	tab <- cbind(tab,apply(p,1,simple.fn,var))
 	tab <- cbind(tab,apply(p,1,simple.fn,sum))	
 	tab <- cbind(tab,apply(p,1,simple.fn,max,1:12)) # Max for first 12 time periods (6 hours from 12:30am)
+	tab <- cbind(tab,apply(p,1,simple.fn,sum,12:19))
+	tab <- cbind(tab,apply(p,1,simple.fn,min))
 	
-	colnames(tab) <- c("mean","var","sum","max12")  # labels for each column
+	colnames(tab) <- c("mean","var","sum","max12","sumoverperiod","min")  # labels for each column
 	
 	as.data.frame(tab)   # Return the final table
 }
+
 ####################################################################
 # do.cluster
 #--------------------------------------------------------------------
@@ -50,7 +53,26 @@ do.cluster <- function(power.table,num.clusters=6)
 {	
 	kmeans(scale(power.table),centers=num.clusters)
 }
+sixclusters <- do.cluster(table, num.clusters = 6)
+summary(sixclusters)
 
+bindedTable <- cbind(p,sixclusters$cluster)
+colnames(bindedTable)[49] <- "cluster"
 
+par(mfrow=c(3,3))
+par(mar=c(3,5,1,1))
+c1 <- which(bindedTable$cluster==1)
+c2 <- which(bindedTable$cluster==2)
+c3 <- which(bindedTable$cluster==3)
+c4 <- which(bindedTable$cluster==4)
+c5 <- which(bindedTable$cluster==5)
+c6 <- which(bindedTable$cluster==6)
+boxplot(bindedTable[c1,],xlab = "time", ylab = "Usage",main="cluster1")
+boxplot(bindedTable[c2,],xlab = "time")
+boxplot(bindedTable[c3,],xlab = "time")
+boxplot(bindedTable[c4,],xlab = "time")
+boxplot(bindedTable[c5,],xlab = "time")
+boxplot(bindedTable[c6,],xlab = "time")
 
-
+par(mfrow=c(1,1)) # to exit the plots on the same 
+plot(colMeans((bindedTable[c1,])),type = "l") ## plot the other ones
