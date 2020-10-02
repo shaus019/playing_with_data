@@ -17,6 +17,7 @@ invest <- read.table("invest.tab")
 # Determine number of options from the invest table
 #
 numberOptions <- nrow(invest)
+print(numberOptions)
 #
 # The format of invest is:
 # Each row is an option
@@ -155,7 +156,11 @@ portfolio <- nsga2(funs,
 					         constraints = constraintFNS,
 					         cdim=3) # 3 constraints
 
+print(portfolio)
+
 ######## Plot the pareto front using default plotting
 ###########################################################
 plot(portfolio,xlab="-ROI (%)",ylab="RISK",main="Objective Space")
-
+#hist(portfolio)
+View(portfolio$par) # for each portfolio you look at investemnts which are greater than minAmount
+## That is where you should plot the histogram
