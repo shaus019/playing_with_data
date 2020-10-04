@@ -83,10 +83,13 @@ plot(colMeans((bindedTable[c2,])),type = "l", xlab = "Time", ylab = "Usage", mai
 plot(colMeans((bindedTable[c3,])),type = "l", xlab = "Time", ylab = "Usage", main = "Cluster 3 Mean", col="red")
 plot(colMeans((bindedTable[c4,])),type = "l", xlab = "Time", ylab = "Usage", main = "Cluster 4 Mean", col="red")
 plot(colMeans((bindedTable[c5,])),type = "l", xlab = "Time", ylab = "Usage", main = "Cluster 5 Mean", col="red")
-plot(colMeans((bindedTable[c5,])),type = "l", xlab = "Time", ylab = "Usage", main = "Cluster 6 Mean", col="red")
+plot(colMeans((bindedTable[c6,])),type = "l", xlab = "Time", ylab = "Usage", main = "Cluster 6 Mean", col="red")
 
 par(mfrow=c(1,1)) # to exit the plots on the same
 
 # Select two explanatory variables and plot them clouring each point by cluster
-plot(table$sum,table$sumoverperiod, xlab = "Sum from all periods", ylab = "Sum from 6 hours",col =bindedTable$cluster )
+## load the library first
+##plot(table$mean,table$min, xlab = "Mean", ylab = "Minimum",col =bindedTable$cluster)
+##ggplot(data=sixClusters) + 
+  ##geom_point(aes(x=variables.table$mean, y=variables.table$min, colour = as.factor(cluster)), size = 3) + scale_colour_discrete("cluster") + xlab("mean")+ ylab("min")
 
