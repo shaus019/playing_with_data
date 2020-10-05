@@ -13,7 +13,7 @@ library(mco)
 # a portfolio are in "invest.tab"
 #
 invest <- read.table("invest.tab")
-#
+#View(invest)
 # Determine number of options from the invest table
 #
 numberOptions <- nrow(invest)
@@ -156,11 +156,24 @@ portfolio <- nsga2(funs,
 					         constraints = constraintFNS,
 					         cdim=3) # 3 constraints
 
-print(portfolio)
-
+print(portfolio$value)
+View(portfolio$value)
 ######## Plot the pareto front using default plotting
 ###########################################################
 plot(portfolio,xlab="-ROI (%)",ylab="RISK",main="Objective Space")
 #hist(portfolio)
 View(portfolio$par) # for each portfolio you look at investemnts which are greater than minAmount
 ## That is where you should plot the histogram
+
+## examine and present the blend of stocks, bonds and cash for a low risk,
+## moderate risk and high risk investment blend(just pick one from each general category).
+# the first column here is the roi and the 2nd is the risk
+# use the min function to find the minimum risk and then compare in with that number in the invest
+lowRisk <- min(portfolio$value[,2]) # low risk
+print(which(portfolio$value == lowRisk, arr.ind=TRUE)) ## to see where the lowRisk value is located
+print(lowRisk)
+highRisk <- max(portfolio$value[,2]) # high risk
+print(which(portfolio$value == highRisk, arr.ind=TRUE)) ## to see where the highRisk value is located
+moderateRisk <- median(portfolio$value[,2]) # moderate risk
+print(moderateRisk)
+#print(which(portfolio$value == moderateRisk, arr.ind=TRUE)) ## wont's see this as the value is just close to the moderate value.
