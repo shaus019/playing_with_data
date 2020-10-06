@@ -176,4 +176,5 @@ highRisk <- max(portfolio$value[,2]) # high risk
 print(which(portfolio$value == highRisk, arr.ind=TRUE)) ## to see where the highRisk value is located
 moderateRisk <- median(portfolio$value[,2]) # moderate risk
 print(moderateRisk)
-#print(which(portfolio$value == moderateRisk, arr.ind=TRUE)) ## wont's see this as the value is just close to the moderate value.
+#print(which(portfolio$value[,2] == abs(moderateRisk), arr.ind=TRUE)) ## wont's see this as the value is just close to the moderate value.
+which(abs(portfolio$value[,2] - moderateRisk) == min(abs(portfolio$value[,2] - moderateRisk)))
