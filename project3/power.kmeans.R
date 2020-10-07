@@ -89,7 +89,8 @@ par(mfrow=c(1,1)) # to exit the plots on the same
 
 # Select two explanatory variables and plot them clouring each point by cluster
 ## load the library first
-##plot(table$mean,table$min, xlab = "Mean", ylab = "Minimum",col =bindedTable$cluster)
-##ggplot(data=sixClusters) + 
-  ##geom_point(aes(x=variables.table$mean, y=variables.table$min, colour = as.factor(cluster)), size = 3) + scale_colour_discrete("cluster") + xlab("mean")+ ylab("min")
+plot(table$mean,table$min, xlab = "Mean", ylab = "Minimum",col =bindedTable$cluster,pch=bindedTable$cluster)
+# Add a legend
+legend(0.1,0.35,legend=unique(bindedTable$cluster),col = unique(bindedTable$cluster),pch = unique(bindedTable$cluster))
 
+       

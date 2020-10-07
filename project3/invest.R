@@ -116,6 +116,21 @@ RISK <- function(x)
 	risk <- sum(invest$Risk[selected]*x[selected])  # Just the sum of risk
 	return(risk) # we want to minimise the risk
 }
+
+#################################
+# CORRELATION
+#################################
+# This is to be minimized.(means if some investemnts in the portfolio are increasing other should be decreasing)
+# This reduces the risk of the portfolio as a whole losing money and results in more stable returns.
+# Only include options that are greater than the minAMOUNT
+##############################################################
+CORRELATION <- function(x)
+{
+  selected <- which(x >= minAMOUNT)
+  removeDuplicates <- duplicated(selected)
+  corr <- sum(invest$Risk[selected]*x[selected])  # Just the sum of risk
+  return(corr) # we want to minimise the risk
+}
 ##################################################
 # Here are the functions that are to be minimised
 # Note ROI is actually maximised, while RISK is
@@ -124,6 +139,7 @@ RISK <- function(x)
 funs <- function(x)
 {
 	return(c(ROI(x),RISK(x)))
+  #return(c(CORRELATION(x)))
 }
 ######################################################
 # Here are the constraints
@@ -163,18 +179,49 @@ View(portfolio$value)
 plot(portfolio,xlab="-ROI (%)",ylab="RISK",main="Objective Space")
 #hist(portfolio)
 View(portfolio$par) # for each portfolio you look at investemnts which are greater than minAmount
-## That is where you should plot the histogram
+## 2: That is where you should plot the histogram
+## showing the number of investments for each solution on the pareto front
+## for the histogram have an empty array and start an index 1
+## Then do a nested loop through portfolio for finding all the values that are greater than minimum amount
+## and add them to the array and then plot it using breaks
 
-## examine and present the blend of stocks, bonds and cash for a low risk,
+
+## 3 :Examine and present the blend of stocks, bonds and cash for a low risk,
 ## moderate risk and high risk investment blend(just pick one from each general category).
 # the first column here is the roi and the 2nd is the risk
 # use the min function to find the minimum risk and then compare in with that number in the invest
 lowRisk <- min(portfolio$value[,2]) # low risk
-print(which(portfolio$value == lowRisk, arr.ind=TRUE)) ## to see where the lowRisk value is located
-print(lowRisk)
+lowRiskIndex <- which(portfolio$value[,2] == lowRisk, arr.ind=TRUE) ## to see where the lowRisk value is located
+print(lowRiskIndex)
+toReplaceLowRisk<-portfolio$par[lowRiskIndex,]
+print(portfolio$value[1,2])
+
+
 highRisk <- max(portfolio$value[,2]) # high risk
-print(which(portfolio$value == highRisk, arr.ind=TRUE)) ## to see where the highRisk value is located
+highRiskIndex<-which(portfolio$value[,2] == highRisk, arr.ind=TRUE) ## to see where the highRisk value is located
+print(highRiskIndex)
+toReplaceHighRisk<-portfolio$par[highRiskIndex,]
+print(toReplaceHighRisk)
+print(portfolio$value[2,2])
+
 moderateRisk <- median(portfolio$value[,2]) # moderate risk
 print(moderateRisk)
 #print(which(portfolio$value[,2] == abs(moderateRisk), arr.ind=TRUE)) ## wont's see this as the value is just close to the moderate value.
-which(abs(portfolio$value[,2] - moderateRisk) == min(abs(portfolio$value[,2] - moderateRisk)))
+moderateRiskIndex<-which(abs(portfolio$value[,2] - moderateRisk) == min(abs(portfolio$value[,2] - moderateRisk)))
+print(moderateRiskIndex)
+moderateRiskIndex<-portfolio$par[39,]
+print(moderateRiskIndex)
+print(portfolio$value[44,2])
+toReplaceModerateRisk<-portfolio$par[44,]
+print(toReplaceModerateRisk)
+
+## replace all with less than 0.05 with 0, as they don't count
+replace1 <- replace(toReplaceLowRisk,toReplaceLowRisk<minAMOUNT,0)
+print(replace1)# we can see we got quite a few values for cash which has low risk.
+replace2<- replace(toReplaceHighRisk,toReplaceHighRisk<minAMOUNT,0)
+print(replace2)# We can see that there are quite few values for stocks as the risk and roi is high for them.
+replace3<- replace(moderateRiskIndex,moderateRiskIndex<minAMOUNT,0)
+print(replace3)# it makes sence as we have some cash,some bond and some stocks bcz its moderate.
+
+
+## 4:Produce the plot given in the assignment
