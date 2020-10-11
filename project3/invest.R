@@ -117,20 +117,7 @@ RISK <- function(x)
 	return(risk) # we want to minimise the risk
 }
 
-#################################
-# CORRELATION
-#################################
-# This is to be minimized.(means if some investemnts in the portfolio are increasing other should be decreasing)
-# This reduces the risk of the portfolio as a whole losing money and results in more stable returns.
-# Only include options that are greater than the minAMOUNT
-##############################################################
-CORRELATION <- function(x)
-{
-  selected <- which(x >= minAMOUNT)
-  removeDuplicates <- duplicated(selected)
-  corr <- sum(invest$Risk[selected]*x[selected])  # Just the sum of risk
-  return(corr) # we want to minimise the risk
-}
+
 ##################################################
 # Here are the functions that are to be minimised
 # Note ROI is actually maximised, while RISK is
@@ -176,7 +163,7 @@ print(portfolio$value)
 View(portfolio$value)
 ######## Plot the pareto front using default plotting
 ###########################################################
-plot(portfolio,xlab="-ROI (%)",ylab="RISK",main="Objective Space")
+plot(portfolio,xlab="ROI (%)",ylab="RISK",main="Objective Space")
 #hist(portfolio)
 View(portfolio$par) # for each portfolio you look at investemnts which are greater than minAmount
 ## 2: That is where you should plot the histogram
@@ -184,7 +171,17 @@ View(portfolio$par) # for each portfolio you look at investemnts which are great
 ## for the histogram have an empty array and start an index 1
 ## Then do a nested loop through portfolio for finding all the values that are greater than minimum amount
 ## and add them to the array and then plot it using breaks
-
+c <- c()
+f = 1
+for(i in 1:nrow(portfolio$par)){
+  for(n in 1:ncol(portfolio$par)){
+    if(portfolio$par[i, n] >= minAMOUNT){
+      c[f] <- i
+      f = f + 1
+    }
+  }
+}
+hist(c,xlab = "Solutions", ylab = "Number of invetsents",main = "Number of Investemnst for each Solution ", breaks=seq(0,52,1))
 
 ## 3 :Examine and present the blend of stocks, bonds and cash for a low risk,
 ## moderate risk and high risk investment blend(just pick one from each general category).
@@ -224,4 +221,74 @@ replace3<- replace(moderateRiskIndex,moderateRiskIndex<minAMOUNT,0)
 print(replace3)# it makes sence as we have some cash,some bond and some stocks bcz its moderate.
 
 
-## 4:Produce the plot given in the assignment
+## 4:
+#################################
+# EXAMINE THE PLOT
+#################################
+# This shows how the percentage of bonds, 
+# stocks and cash vary as you move along the pareto front from the least to greatest percentage return.
+##############################################################
+emptyMatrix = matrix(0,nrow=52,ncol=3) # create an empty matrix for 52 solutions and 3 types of investemnts.
+for(c in 1:52){ # replace investemnts which are less than minAMount with 0 and sum each coloumn.
+  investment <- portfolio$par[c,]
+  investment <- replace(investment, investment < minAMOUNT, 0)
+  investmentSum= colSums(matrix(investment,nrow=10))
+  emptyMatrix[c,] = investmentSum
+}
+table1 = cbind(emptyMatrix, portfolio$value[,1]) # add the 1st coulmn which is the ROI to the matrix.
+total <- apply(table1[1:nrow(table1),c(1, 2, 3)], 1, sum)
+table1 = cbind(table1, total)
+colnames(table1) = c("Stocks", "Bonds", "Cash", "Return", "Total") # give the names to the columns
+dataframe = as.data.frame(table1) # convert it ot the dataframe
+dataframe = dataframe[order(dataframe$Return),c(1:5)]
+plot(-tableDataframe$Return,dataframe$`Stocks`, type="l", col="blue",lty=1,
+     xlab="% Return", ylab="Blend %", main = "Portfolio Blend", ylim = c(0,1),lwd=2)
+lines(-dataframe$Return, dataframe$`Bonds`, col="green", lty=1,lwd=2)
+lines(-dataframe$Return, dataframe$`Cash`, col="red", lty=1,lwd=2)
+lines(-dataframe$Return, dataframe$`Total`, col="grey", lty=1,lwd=2)
+legend("topleft", legend=c("Stocks %", "Bonds %","Cash %", "Total %"),col=c("blue", "green","red", "grey"), lty=1:2, cex=0.8,lwd=2)
+
+## 5:
+#################################
+# CORRELATION
+#################################
+# This is to be minimized.(means if some investemnts in the portfolio are increasing other should be decreasing)
+# This reduces the risk of the portfolio as a whole losing money and results in more stable returns.
+# Only include options that are greater than the minAMOUNT
+##############################################################
+correlationTable <- read.table("corr(1).tab")
+CORRELATION <- function(x)
+{
+  selected <- which(x >= minAMOUNT)
+  
+  selected2 <- correlationTable[selected,selected] # Put the values in the correaltion table
+  withoutDuplicates <- c() ##For non duplicates correaltion values
+  index <- 1
+  for(i in 1:nrow(selected2)){ # go through each row in the table
+    for (n in 1:ncol(selected2)) { # go through each column in the table
+      if(!(selected2[i,n]%in%withoutDuplicates)){
+        withoutDuplicates[index] <- selected2[i,n]
+        index = index+1
+      }
+    }
+  } 
+  sumOfTheCorrelations <- sum(withoutDuplicates)-1
+  lenghtOfTheCorrelation <- length(withoutDuplicates) -1
+  return(sumOfTheCorrelations/lenghtOfTheCorrelation) # which will return the average
+}
+funs <- function(x)
+{
+  return(c(ROI(x),RISK(x),CORRELATION(x)))
+}
+portfolio2 <- nsga2(funs,
+                   idim=numberOptions, #inputs for each option,
+                   odim=3, #2 outputs (ROI,RISK)
+                   popsize=52,generations=500,
+                   lower.bounds=lower,
+                   upper.bounds=upper,
+                   constraints = constraintFNS,
+                   cdim=3) # 3 constraints
+
+print(portfolio2$value)
+View(portfolio2$value)
+plot(portfolio2$value[,3],-portfolio2$value[,1],xlab="CORRELATION",ylab="-ROI (%)",main="Objective Space")
